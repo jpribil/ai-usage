@@ -1,4 +1,6 @@
 using System.Drawing.Drawing2D;
+using System.Runtime.InteropServices;
+using Microsoft.Win32;
 using AIUsageMonitor.Core;
 using AIUsageMonitor.Infrastructure;
 using AIUsageMonitor.Services;
@@ -24,6 +26,7 @@ internal sealed class MainForm : Form
     private readonly System.Windows.Forms.Timer _pollTimer = new();
     private readonly System.Windows.Forms.Timer _countdownTimer = new();
     private readonly System.Windows.Forms.Timer _resetPollTimer = new() { Interval = 5_000 };
+    private static readonly uint TaskbarCreatedMessage = RegisterWindowMessage("TaskbarCreated");
     private readonly SemaphoreSlim _pollGate = new(1, 1);
     private CancellationTokenSource _pollCancellation = new();
     private UsageData? _claudeUsage;
@@ -53,7 +56,7 @@ internal sealed class MainForm : Form
 
         _trayIcon = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = AppIcon.Instance,
             Text = AppMetadata.ProductName,
             Visible = true,
             ContextMenuStrip = _menu
@@ -102,6 +105,17 @@ internal sealed class MainForm : Form
         {
             var cardRect = CardBounds(index, cards.Count);
             DrawCard(e.Graphics, cardRect, cards[index], palette);
+        }
+    }
+
+    protected override void WndProc(ref Message message)
+    {
+        base.WndProc(ref message);
+        if (message.Msg == TaskbarCreatedMessage)
+        {
+            _trayIcon.Visible = false;
+            _trayIcon.Visible = true;
+            _diagnosticLog.Write("TaskbarCreated received; tray icon restored.");
         }
     }
 
@@ -708,7 +722,24 @@ internal sealed class MainForm : Form
             Math.Clamp(location.Y, screen.Top, Math.Max(screen.Top, screen.Bottom - Height)));
     }
 
-    private Palette EffectivePalette => _settings.Theme == "light" ? Light : Dark;
+    private Palette EffectivePalette => IsLightTheme ? Light : Dark;
+    private bool IsLightTheme
+    {
+        get
+        {
+            if (_settings.Theme == "light") return true;
+            if (_settings.Theme == "dark") return false;
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", writable: false);
+                return key?.GetValue("SystemUsesLightTheme") is int value && value == 1;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+    }
     private int Scale(int value) => Scale(value, DeviceDpi / 96f * UiScale);
     private static int Scale(int value, float scale) => (int)Math.Round(value * scale);
     private Font CreateFont(float size, FontStyle style) => new("Bahnschrift SemiCondensed", Scale((int)size), style, GraphicsUnit.Pixel);
@@ -741,6 +772,9 @@ internal sealed class MainForm : Form
         Color.FromArgb(0xF2, 0xF4, 0xF8), Color.White, Color.FromArgb(0xE1, 0xE5, 0xEC), Color.White,
         Color.FromArgb(0xE4, 0xE8, 0xEF), Color.FromArgb(0x11, 0x15, 0x1B), Color.FromArgb(0x5B, 0x65, 0x73),
         Color.FromArgb(0xE7, 0xEB, 0xF1), Color.FromArgb(0xEB, 0xEE, 0xF3), Color.FromArgb(0x45, 0x4D, 0x58));
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern uint RegisterWindowMessage(string message);
 }
 
 internal static class ToolStripMenuItemExtensions
