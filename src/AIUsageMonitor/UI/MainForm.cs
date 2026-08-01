@@ -69,14 +69,18 @@ internal sealed class MainForm : Form
         _pollTimer.Tick += async (_, _) => await PollAsync();
         _countdownTimer.Tick += (_, _) => OnCountdownTick();
         _resetPollTimer.Tick += async (_, _) => await PollAsync();
-        Shown += async (_, _) => await PollAsync();
+        Shown += async (_, _) =>
+        {
+            if (!_settings.WidgetVisible)
+            {
+                Hide();
+            }
+
+            await PollAsync();
+        };
 
         ResizeToContent();
         PositionFromSettings();
-        if (!settings.WidgetVisible)
-        {
-            BeginInvoke(Hide);
-        }
     }
 
     protected override void Dispose(bool disposing)
