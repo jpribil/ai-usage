@@ -17,7 +17,6 @@ internal sealed class NtfyNotifier(HttpClient httpClient, DiagnosticLog diagnost
         {
             UsageLimit.ClaudeSession => "Claude 5h limit reset",
             UsageLimit.ClaudeWeekly => "Claude 7d limit reset",
-            UsageLimit.CodexSession => "ChatGPT 5h limit reset",
             UsageLimit.CodexWeekly => "ChatGPT 7d limit reset",
             _ => throw new ArgumentOutOfRangeException(nameof(limit))
         };
