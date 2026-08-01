@@ -174,6 +174,20 @@ internal sealed class MainForm : Form
         SendMessage(Handle, WmNcLeftButtonDown, HtCaption, IntPtr.Zero);
     }
 
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        Cursor = _routerBalanceBounds.Values.Any(bounds => bounds.Contains(e.Location))
+            ? Cursors.Hand
+            : Cursors.Default;
+    }
+
+    protected override void OnMouseLeave(EventArgs e)
+    {
+        base.OnMouseLeave(e);
+        Cursor = Cursors.Default;
+    }
+
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         if (!_exiting && e.CloseReason == CloseReason.UserClosing)
