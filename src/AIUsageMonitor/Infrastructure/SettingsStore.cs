@@ -13,10 +13,8 @@ internal sealed class SettingsStore(DiagnosticLog diagnosticLog)
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
     };
 
-    private readonly string _path = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "AIUsageMonitor.WinForms",
-        "settings.json");
+    // Portable application: settings belong beside the executable, not in AppData.
+    private readonly string _path = Path.Combine(AppContext.BaseDirectory, "settings.json");
 
     internal AppSettings Load()
     {
@@ -40,9 +38,14 @@ internal sealed class SettingsStore(DiagnosticLog diagnosticLog)
 
     internal void Save(AppSettings settings)
     {
-        var normalized = settings.Normalize();
-        var directory = Path.GetDirectoryName(_path)!;
-        Directory.CreateDirectory(directory);
-        File.WriteAllText(_path, JsonSerializer.Serialize(normalized, SerializerOptions));
+        try
+        {
+            var normalized = settings.Normalize();
+            File.WriteAllText(_path, JsonSerializer.Serialize(normalized, SerializerOptions));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            diagnosticLog.Write($"Unable to save settings beside executable: {exception.Message}");
+        }
     }
 }
