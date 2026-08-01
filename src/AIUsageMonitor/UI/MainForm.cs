@@ -642,8 +642,10 @@ internal sealed class MainForm : Form
         using var primary = new SolidBrush(palette.PrimaryText);
         var row = new Rectangle(bounds.Left + Scale(12), bounds.Top + offset, bounds.Width - Scale(24), Scale(20));
         var icon = name == "OpenRouter" ? RouterIcons.OpenRouter : RouterIcons.NanoGpt;
-        graphics.DrawImage(icon, new Rectangle(row.Left, row.Top + Scale(1), Scale(15), Scale(15)));
-        graphics.DrawString(name, font, muted, new Rectangle(row.Left + Scale(22), row.Top, row.Width - Scale(22), row.Height), StringFormat.GenericDefault);
+        var iconSize = Scale(16);
+        var iconBounds = new Rectangle(row.Left, row.Top + (row.Height - iconSize) / 2, iconSize, iconSize);
+        graphics.DrawImage(icon, iconBounds);
+        graphics.DrawString(name, font, muted, new Rectangle(row.Left + Scale(22), row.Top, row.Width - Scale(22), row.Height), NameFormat);
         var value = balance is decimal amount ? $"${amount:0.00}" : error ?? "—";
         graphics.DrawString(value, font, primary, row, RightFormat);
     }
@@ -798,6 +800,7 @@ internal sealed class MainForm : Form
     }
 
     private static readonly StringFormat CenteredFormat = new() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+    private static readonly StringFormat NameFormat = new() { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
     private static readonly StringFormat RightFormat = new() { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Near, Trimming = StringTrimming.EllipsisCharacter };
     private static readonly StringFormat EllipsisFormat = new() { LineAlignment = StringAlignment.Near, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
 

@@ -17,6 +17,6 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\RouterIcons\*-gray.png" />
+    <EmbeddedResource Include="Resources\RouterIcons\ico\*.png" />
   </ItemGroup>
 </Project>
