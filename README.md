@@ -4,6 +4,15 @@ Malý přenosný widget pro Windows, který zobrazuje aktuální využití limit
 
 Aktuální instalační soubor je vždy v [GitHub Releases](https://github.com/jpribil/ai-usage/releases). Projekt je určen pro Windows x64.
 
+## Ukázka
+
+<p align="center">
+  <img src="docs/images/widget-dark.png" alt="AI Usage Monitor v tmavém motivu" width="300">
+  <img src="docs/images/widget-light.png" alt="AI Usage Monitor ve světlém motivu" width="300">
+</p>
+
+<p align="center"><em>Tmavý a světlý motiv widgetu.</em></p>
+
 ## Co umí
 
 - Zobrazuje 5hodinový a sedmidenní limit Claude Code včetně času resetu.
