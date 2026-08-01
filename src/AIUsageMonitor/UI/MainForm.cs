@@ -590,7 +590,7 @@ internal sealed class MainForm : Form
 
     private void DrawGauge(Graphics graphics, Rectangle bounds)
     {
-        var center = new PointF(bounds.Left + bounds.Width / 2f, bounds.Top + bounds.Height * .60f);
+        var center = new PointF(bounds.Left + bounds.Width / 2f, bounds.Top + bounds.Height / 2f);
         var radius = bounds.Width * .34f;
         using var green = new Pen(Color.FromArgb(0x22, 0xC5, 0x5E), Math.Max(2, bounds.Width * .135f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
         using var amber = new Pen(Color.FromArgb(0xF5, 0x9E, 0x0B), green.Width) { StartCap = LineCap.Round, EndCap = LineCap.Round };
