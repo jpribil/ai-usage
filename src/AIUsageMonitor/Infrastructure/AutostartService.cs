@@ -5,7 +5,7 @@ namespace AIUsageMonitor.Infrastructure;
 internal sealed class AutostartService(DiagnosticLog diagnosticLog)
 {
     private const string RunKeyPath = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
-    private const string ValueName = "AIUsageMonitor";
+    private const string ValueName = "AIUsageMonitorWinForms";
 
     internal bool IsEnabled
     {

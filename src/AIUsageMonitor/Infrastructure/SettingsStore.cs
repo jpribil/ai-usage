@@ -15,7 +15,7 @@ internal sealed class SettingsStore(DiagnosticLog diagnosticLog)
 
     private readonly string _path = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "AIUsageMonitor",
+        "AIUsageMonitor.WinForms",
         "settings.json");
 
     internal AppSettings Load()
