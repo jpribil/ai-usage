@@ -14,3 +14,4 @@ git commit -m "release: v$Version"
 git tag -a "v$Version" -m "AI Usage Monitor $Version"
 git push origin main --follow-tags
 # The tag push triggers .github/workflows/release.yml, which creates the release and uploads the EXE.
+Start-Process -FilePath $publishedExe

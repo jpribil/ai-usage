@@ -1,4 +1,5 @@
 using System.Drawing.Drawing2D;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using AIUsageMonitor.Core;
@@ -20,6 +21,7 @@ internal sealed class MainForm : Form
     private readonly NotifyIcon _trayIcon;
     private readonly ContextMenuStrip _menu = new();
     private readonly Dictionary<UsageLimit, Rectangle> _checkboxBounds = [];
+    private readonly Dictionary<string, Rectangle> _routerBalanceBounds = [];
     private AppSettings _settings;
     private bool _exiting;
     private readonly System.Windows.Forms.Timer _pollTimer = new();
@@ -151,6 +153,15 @@ internal sealed class MainForm : Form
             if (bounds.Contains(e.Location))
             {
                 ToggleNotification(limit);
+                return;
+            }
+        }
+
+        foreach (var (router, bounds) in _routerBalanceBounds)
+        {
+            if (bounds.Contains(e.Location))
+            {
+                OpenRouterBalancePage(router);
                 return;
             }
         }
@@ -330,6 +341,12 @@ internal sealed class MainForm : Form
         if (nanoGpt is null) return;
         SaveSettings(_settings.WithRouterKeys(openRouter, nanoGpt));
         _ = PollAsync(force: true);
+    }
+
+    private static void OpenRouterBalancePage(string router)
+    {
+        var url = router == "OpenRouter" ? "https://openrouter.ai/settings/credits" : "https://nano-gpt.com/balance";
+        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 
     private void ConfigureGitHubToken()
@@ -644,6 +661,7 @@ internal sealed class MainForm : Form
         using var muted = new SolidBrush(palette.MutedText);
         using var primary = new SolidBrush(palette.PrimaryText);
         var row = new Rectangle(bounds.Left + Scale(12), bounds.Top + offset, bounds.Width - Scale(24), Scale(20));
+        _routerBalanceBounds[name] = row;
         var icon = name == "OpenRouter" ? RouterIcons.OpenRouter : RouterIcons.NanoGpt;
         var iconSize = Scale(16);
         var iconBounds = new Rectangle(row.Left, row.Top + (row.Height - iconSize) / 2, iconSize, iconSize);
