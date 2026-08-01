@@ -1,0 +1,49 @@
+namespace AIUsageMonitor.Core;
+
+internal sealed record AppSettings
+{
+    internal const int DefaultPollIntervalMilliseconds = 15 * 60 * 1000;
+    internal static readonly IReadOnlySet<int> AllowedPollIntervals = new HashSet<int>
+    {
+        60 * 1000,
+        5 * 60 * 1000,
+        DefaultPollIntervalMilliseconds,
+        60 * 60 * 1000
+    };
+
+    public int? WindowX { get; init; }
+    public int? WindowY { get; init; }
+    public int PollIntervalMilliseconds { get; init; } = DefaultPollIntervalMilliseconds;
+    public string? Language { get; init; }
+    public long? LastUpdateCheckUnix { get; init; }
+    public bool WidgetVisible { get; init; } = true;
+    public bool ShowClaudeCode { get; init; } = true;
+    public bool ShowCodex { get; init; }
+    public bool LayoutHorizontal { get; init; } = true;
+    public bool AlwaysOnTop { get; init; }
+    public string? Theme { get; init; }
+    public string? NtfyTopic { get; init; }
+    public bool[] ArmedLimits { get; init; } = new bool[4];
+
+    internal AppSettings Normalize()
+    {
+        var armed = ArmedLimits.Length == 4 ? ArmedLimits : new bool[4];
+        return this with
+        {
+            PollIntervalMilliseconds = AllowedPollIntervals.Contains(PollIntervalMilliseconds)
+                ? PollIntervalMilliseconds
+                : DefaultPollIntervalMilliseconds,
+            ShowClaudeCode = ShowClaudeCode || !ShowCodex,
+            Theme = Theme is "light" or "dark" ? Theme : null,
+            NtfyTopic = string.IsNullOrWhiteSpace(NtfyTopic) ? null : NtfyTopic.Trim(),
+            ArmedLimits = armed
+        };
+    }
+
+    internal AppSettings WithArmedLimit(UsageLimit limit, bool armed)
+    {
+        var limits = (bool[])ArmedLimits.Clone();
+        limits[(int)limit] = armed;
+        return this with { ArmedLimits = limits };
+    }
+}
