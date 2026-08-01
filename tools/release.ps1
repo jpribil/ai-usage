@@ -9,4 +9,4 @@ git add $root
 git commit -m "release: v$Version"
 git tag -a "v$Version" -m "AI Usage Monitor $Version"
 git push origin main --follow-tags
-gh release create "v$Version" (Join-Path $output 'AIUsageMonitor.exe') --repo jpribil/ai-usage --title "AI Usage Monitor $Version" --generate-notes
+# The tag push triggers .github/workflows/release.yml, which creates the release and uploads the EXE.
