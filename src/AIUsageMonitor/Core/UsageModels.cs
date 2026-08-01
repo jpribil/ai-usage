@@ -19,8 +19,7 @@ internal enum UsageLimit
 {
     ClaudeSession = 0,
     ClaudeWeekly = 1,
-    CodexSession = 2,
-    CodexWeekly = 3
+    CodexWeekly = 2
 }
 
 internal enum PollError

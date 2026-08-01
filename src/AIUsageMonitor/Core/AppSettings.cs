@@ -24,11 +24,17 @@ internal sealed record AppSettings
     public string? NtfyTopic { get; init; }
     public string? OpenRouterApiKeyProtected { get; init; }
     public string? NanoGptApiKeyProtected { get; init; }
-    public bool[] ArmedLimits { get; init; } = new bool[4];
+    public bool[] ArmedLimits { get; init; } = new bool[3];
 
     internal AppSettings Normalize()
     {
-        var armed = ArmedLimits.Length == 4 ? ArmedLimits : new bool[4];
+        // v2.0.0-alpha.4 had a now-obsolete Codex 5h slot at index 2.
+        var armed = ArmedLimits.Length switch
+        {
+            3 => ArmedLimits,
+            4 => [ArmedLimits[0], ArmedLimits[1], ArmedLimits[3]],
+            _ => new bool[3]
+        };
         return this with
         {
             PollIntervalMilliseconds = AllowedPollIntervals.Contains(PollIntervalMilliseconds)

@@ -376,7 +376,7 @@ internal sealed class MainForm : Form
             }
             if (result.Data.Codex is not null)
             {
-                DetectResets(_codexUsage, result.Data.Codex, UsageLimit.CodexSession);
+                DetectResets(_codexUsage, result.Data.Codex, UsageLimit.CodexWeekly);
                 _codexUsage = result.Data.Codex;
                 _codexError = null;
             }
@@ -455,8 +455,15 @@ internal sealed class MainForm : Form
             return;
         }
 
-        DetectReset(previous.Session, current.Session, sessionLimit);
-        DetectReset(previous.Weekly, current.Weekly, sessionLimit + 1);
+        if (sessionLimit == UsageLimit.ClaudeSession)
+        {
+            DetectReset(previous.Session, current.Session, UsageLimit.ClaudeSession);
+            DetectReset(previous.Weekly, current.Weekly, UsageLimit.ClaudeWeekly);
+        }
+        else
+        {
+            DetectReset(previous.Weekly, current.Weekly, UsageLimit.CodexWeekly);
+        }
     }
 
     private void DetectReset(UsageSection previous, UsageSection current, UsageLimit limit)
@@ -578,11 +585,18 @@ internal sealed class MainForm : Form
             titleBounds.Width -= badgeWidth + Scale(6);
         }
         graphics.DrawString(serviceName, titleFont, titleBrush, titleBounds, EllipsisFormat);
-        var baseLimit = service == ServiceKind.Claude ? UsageLimit.ClaudeSession : UsageLimit.CodexSession;
+        var baseLimit = UsageLimit.ClaudeSession;
         var usage = service == ServiceKind.Claude ? _claudeUsage : _codexUsage;
         var error = service == ServiceKind.Claude ? _claudeError : _codexError;
-        DrawUsageRow(graphics, bounds, Scale(43), "5h", baseLimit, usage?.Session, error, palette);
-        DrawUsageRow(graphics, bounds, Scale(82), "7d", baseLimit + 1, usage?.Weekly, error, palette);
+        if (service == ServiceKind.Claude)
+        {
+            DrawUsageRow(graphics, bounds, Scale(43), "5h", baseLimit, usage?.Session, error, palette);
+            DrawUsageRow(graphics, bounds, Scale(82), "7d", UsageLimit.ClaudeWeekly, usage?.Weekly, error, palette);
+        }
+        else
+        {
+            DrawUsageRow(graphics, bounds, Scale(62), "7d", UsageLimit.CodexWeekly, usage?.Weekly, error, palette);
+        }
     }
 
     private void DrawRouterCard(Graphics graphics, Rectangle bounds, Palette palette)
