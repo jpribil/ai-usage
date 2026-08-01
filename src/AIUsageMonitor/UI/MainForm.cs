@@ -15,13 +15,11 @@ internal sealed class MainForm : Form
     private readonly UsagePollingService _polling;
     private readonly NtfyNotifier _notifier;
     private readonly AutostartService _autostart;
+    private readonly RouterBalanceProvider _routerBalances;
     private readonly NotifyIcon _trayIcon;
     private readonly ContextMenuStrip _menu = new();
     private readonly Dictionary<UsageLimit, Rectangle> _checkboxBounds = [];
     private AppSettings _settings;
-    private Point _dragOrigin;
-    private Point _windowOrigin;
-    private bool _dragging;
     private bool _exiting;
     private readonly System.Windows.Forms.Timer _pollTimer = new();
     private readonly System.Windows.Forms.Timer _countdownTimer = new();
@@ -31,11 +29,12 @@ internal sealed class MainForm : Form
     private CancellationTokenSource _pollCancellation = new();
     private UsageData? _claudeUsage;
     private UsageData? _codexUsage;
+    private RouterBalances? _routerUsage;
     private PollError? _claudeError;
     private PollError? _codexError;
     private int _consecutiveTransientFailures;
 
-    internal MainForm(AppSettings settings, SettingsStore settingsStore, DiagnosticLog diagnosticLog, UsagePollingService polling, NtfyNotifier notifier, AutostartService autostart)
+    internal MainForm(AppSettings settings, SettingsStore settingsStore, DiagnosticLog diagnosticLog, UsagePollingService polling, NtfyNotifier notifier, AutostartService autostart, RouterBalanceProvider routerBalances)
     {
         _settings = settings;
         _settingsStore = settingsStore;
@@ -43,6 +42,7 @@ internal sealed class MainForm : Form
         _polling = polling;
         _notifier = notifier;
         _autostart = autostart;
+        _routerBalances = routerBalances;
 
         AutoScaleMode = AutoScaleMode.Dpi;
         DoubleBuffered = true;
@@ -117,6 +117,11 @@ internal sealed class MainForm : Form
             _trayIcon.Visible = true;
             _diagnosticLog.Write("TaskbarCreated received; tray icon restored.");
         }
+        else if (message.Msg == WmExitSizeMove)
+        {
+            Location = ClampToVirtualScreen(Location);
+            SaveSettings(_settings with { WindowX = Location.X, WindowY = Location.Y });
+        }
     }
 
     protected override void OnMouseDown(MouseEventArgs e)
@@ -148,32 +153,8 @@ internal sealed class MainForm : Form
             }
         }
 
-        _dragging = true;
-        _dragOrigin = e.Location;
-        _windowOrigin = Location;
-    }
-
-    protected override void OnMouseMove(MouseEventArgs e)
-    {
-        base.OnMouseMove(e);
-        if (!_dragging)
-        {
-            return;
-        }
-
-        Location = ClampToVirtualScreen(new Point(
-            _windowOrigin.X + e.X - _dragOrigin.X,
-            _windowOrigin.Y + e.Y - _dragOrigin.Y));
-    }
-
-    protected override void OnMouseUp(MouseEventArgs e)
-    {
-        base.OnMouseUp(e);
-        if (_dragging)
-        {
-            _dragging = false;
-            SaveSettings(_settings with { WindowX = Location.X, WindowY = Location.Y });
-        }
+        ReleaseCapture();
+        SendMessage(Handle, WmNcLeftButtonDown, HtCaption, IntPtr.Zero);
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -204,7 +185,6 @@ internal sealed class MainForm : Form
         _menu.Items.Add(CreateFrequencyMenu());
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(CreateAppearanceMenu());
-        _menu.Items.Add(CreateLayoutMenu());
         _menu.Items.Add(Item("Language", null, enabled: false));
         _menu.Items.Add(CheckItem("Show Widget", _settings.WidgetVisible, ToggleWidgetVisibility));
         _menu.Items.Add(CheckItem("Always on Top", _settings.AlwaysOnTop, ToggleTopMost));
@@ -212,6 +192,7 @@ internal sealed class MainForm : Form
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(CheckItem("Start with Windows", _autostart.IsEnabled, ToggleAutostart));
         _menu.Items.Add(Item("Notification channel…", ConfigureNotificationChannel));
+        _menu.Items.Add(Item("Router API keys…", ConfigureRouterKeys));
         _menu.Items.Add(Item($"v{AppMetadata.DisplayVersion} - Check for Updates", () => _diagnosticLog.Write("Update check requested.")));
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(Item("Exit", ExitApplication));
@@ -242,16 +223,6 @@ internal sealed class MainForm : Form
             () => SaveSettings(_settings with { Theme = "light" })));
         parent.DropDownItems.Add(CheckItem("Dark", _settings.Theme == "dark",
             () => SaveSettings(_settings with { Theme = "dark" })));
-        return parent;
-    }
-
-    private ToolStripMenuItem CreateLayoutMenu()
-    {
-        var parent = new ToolStripMenuItem("Layout");
-        parent.DropDownItems.Add(CheckItem("Side by Side", _settings.LayoutHorizontal,
-            () => ChangeLayout(true)));
-        parent.DropDownItems.Add(CheckItem("Stacked", !_settings.LayoutHorizontal,
-            () => ChangeLayout(false)));
         return parent;
     }
 
@@ -300,12 +271,6 @@ internal sealed class MainForm : Form
         _ = PollAsync(force: true);
     }
 
-    private void ChangeLayout(bool horizontal)
-    {
-        SaveSettings(_settings with { LayoutHorizontal = horizontal });
-        ResizeToContent();
-    }
-
     private void ToggleTopMost()
     {
         TopMost = !_settings.AlwaysOnTop;
@@ -343,6 +308,16 @@ internal sealed class MainForm : Form
         {
             SaveSettings(_settings with { NtfyTopic = string.IsNullOrEmpty(result) ? null : result });
         }
+    }
+
+    private void ConfigureRouterKeys()
+    {
+        var openRouter = TopicDialog.Prompt(this, _settings.OpenRouterApiKey, "Enter OpenRouter management API key:");
+        if (openRouter is null) return;
+        var nanoGpt = TopicDialog.Prompt(this, _settings.NanoGptApiKey, "Enter nano-gpt.com API key:");
+        if (nanoGpt is null) return;
+        SaveSettings(_settings.WithRouterKeys(openRouter, nanoGpt));
+        _ = PollAsync(force: true);
     }
 
     private void ToggleNotification(UsageLimit limit)
@@ -388,6 +363,7 @@ internal sealed class MainForm : Form
         {
             _diagnosticLog.Write("Starting usage poll.");
             var result = await _polling.PollAsync(_settings.ShowClaudeCode, _settings.ShowCodex, _pollCancellation.Token);
+            _routerUsage = await _routerBalances.GetAsync(_settings.OpenRouterApiKey, _settings.NanoGptApiKey, _pollCancellation.Token);
             if (result.Data.ClaudeCode is not null)
             {
                 DetectResets(_claudeUsage, result.Data.ClaudeCode, UsageLimit.ClaudeSession);
@@ -501,15 +477,12 @@ internal sealed class MainForm : Form
     {
         var count = ActiveServices().Count;
         var scale = DeviceDpi / 96f * UiScale;
-        var cardWidth = Scale(count == 1 ? 274 : 214, scale);
+        var cardWidth = Scale(274, scale);
         var cardHeight = Scale(126, scale);
         var padding = Scale(14, scale);
         var titleHeight = Scale(34, scale);
         var gap = Scale(12, scale);
-        var horizontal = count > 1 && _settings.LayoutHorizontal;
-        ClientSize = horizontal
-            ? new Size(2 * padding + count * cardWidth + (count - 1) * gap, titleHeight + 2 * padding + cardHeight)
-            : new Size(2 * padding + cardWidth, titleHeight + 2 * padding + count * cardHeight + (count - 1) * gap);
+        ClientSize = new Size(2 * padding + cardWidth, titleHeight + 2 * padding + count * cardHeight + (count - 1) * gap);
         Location = ClampToVirtualScreen(Location);
     }
 
@@ -524,21 +497,19 @@ internal sealed class MainForm : Form
         {
             services.Add(ServiceKind.Codex);
         }
+        services.Add(ServiceKind.Router);
         return services;
     }
 
     private Rectangle CardBounds(int index, int count)
     {
         var scale = DeviceDpi / 96f * UiScale;
-        var cardWidth = Scale(count == 1 ? 274 : 214, scale);
+        var cardWidth = Scale(274, scale);
         var cardHeight = Scale(126, scale);
         var padding = Scale(14, scale);
         var titleHeight = Scale(34, scale);
         var gap = Scale(12, scale);
-        var horizontal = count > 1 && _settings.LayoutHorizontal;
-        return horizontal
-            ? new Rectangle(padding + index * (cardWidth + gap), titleHeight + padding, cardWidth, cardHeight)
-            : new Rectangle(padding, titleHeight + padding + index * (cardHeight + gap), cardWidth, cardHeight);
+        return new Rectangle(padding, titleHeight + padding + index * (cardHeight + gap), cardWidth, cardHeight);
     }
 
     private void DrawTitleBar(Graphics graphics, Palette palette)
@@ -584,6 +555,11 @@ internal sealed class MainForm : Form
         graphics.FillPath(card, RoundedRectangle(bounds, Scale(8)));
         using var border = new Pen(palette.CardBorder);
         graphics.DrawPath(border, RoundedRectangle(bounds, Scale(8)));
+        if (service == ServiceKind.Router)
+        {
+            DrawRouterCard(graphics, bounds, palette);
+            return;
+        }
         using var titleFont = CreateFont(15, FontStyle.Bold);
         using var titleBrush = new SolidBrush(palette.PrimaryText);
         var serviceName = service == ServiceKind.Claude ? "Claude Code" : "ChatGPT";
@@ -607,6 +583,26 @@ internal sealed class MainForm : Form
         var error = service == ServiceKind.Claude ? _claudeError : _codexError;
         DrawUsageRow(graphics, bounds, Scale(43), "5h", baseLimit, usage?.Session, error, palette);
         DrawUsageRow(graphics, bounds, Scale(82), "7d", baseLimit + 1, usage?.Weekly, error, palette);
+    }
+
+    private void DrawRouterCard(Graphics graphics, Rectangle bounds, Palette palette)
+    {
+        using var titleFont = CreateFont(15, FontStyle.Bold);
+        using var text = new SolidBrush(palette.PrimaryText);
+        graphics.DrawString("Routery", titleFont, text, bounds.Left + Scale(12), bounds.Top + Scale(8));
+        DrawRouterBalance(graphics, bounds, Scale(47), "OpenRouter", _routerUsage?.OpenRouterUsd, _routerUsage?.OpenRouterError, palette);
+        DrawRouterBalance(graphics, bounds, Scale(84), "nano-gpt.com", _routerUsage?.NanoGptUsd, _routerUsage?.NanoGptError, palette);
+    }
+
+    private void DrawRouterBalance(Graphics graphics, Rectangle bounds, int offset, string name, decimal? balance, string? error, Palette palette)
+    {
+        using var font = CreateFont(12, FontStyle.Regular);
+        using var muted = new SolidBrush(palette.MutedText);
+        using var primary = new SolidBrush(palette.PrimaryText);
+        var row = new Rectangle(bounds.Left + Scale(12), bounds.Top + offset, bounds.Width - Scale(24), Scale(20));
+        graphics.DrawString(name, font, muted, row, StringFormat.GenericDefault);
+        var value = balance is decimal amount ? $"${amount:0.00}" : error ?? "—";
+        graphics.DrawString(value, font, primary, row, RightFormat);
     }
 
     private void DrawUsageRow(Graphics graphics, Rectangle card, int offset, string label, UsageLimit limit, UsageSection? usage, PollError? error, Palette palette)
@@ -759,7 +755,7 @@ internal sealed class MainForm : Form
     private static readonly StringFormat RightFormat = new() { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Near, Trimming = StringTrimming.EllipsisCharacter };
     private static readonly StringFormat EllipsisFormat = new() { LineAlignment = StringAlignment.Near, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
 
-    private enum ServiceKind { Claude, Codex }
+    private enum ServiceKind { Claude, Codex, Router }
 
     private sealed record Palette(Color WindowBackground, Color TitleBackground, Color Border, Color CardBackground,
         Color CardBorder, Color PrimaryText, Color MutedText, Color Track, Color CloseBackground, Color CloseGlyph);
@@ -775,6 +771,16 @@ internal sealed class MainForm : Form
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern uint RegisterWindowMessage(string message);
+
+    [DllImport("user32.dll")]
+    private static extern bool ReleaseCapture();
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr handle, int message, int wParam, IntPtr lParam);
+
+    private const int WmNcLeftButtonDown = 0x00A1;
+    private const int WmExitSizeMove = 0x0232;
+    private const int HtCaption = 2;
 }
 
 internal static class ToolStripMenuItemExtensions

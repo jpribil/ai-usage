@@ -19,10 +19,11 @@ internal sealed record AppSettings
     public bool WidgetVisible { get; init; } = true;
     public bool ShowClaudeCode { get; init; } = true;
     public bool ShowCodex { get; init; }
-    public bool LayoutHorizontal { get; init; } = true;
     public bool AlwaysOnTop { get; init; }
     public string? Theme { get; init; }
     public string? NtfyTopic { get; init; }
+    public string? OpenRouterApiKeyProtected { get; init; }
+    public string? NanoGptApiKeyProtected { get; init; }
     public bool[] ArmedLimits { get; init; } = new bool[4];
 
     internal AppSettings Normalize()
@@ -46,4 +47,12 @@ internal sealed record AppSettings
         limits[(int)limit] = armed;
         return this with { ArmedLimits = limits };
     }
+
+    internal string? OpenRouterApiKey => SecretProtector.Unprotect(OpenRouterApiKeyProtected);
+    internal string? NanoGptApiKey => SecretProtector.Unprotect(NanoGptApiKeyProtected);
+    internal AppSettings WithRouterKeys(string? openRouter, string? nanoGpt) => this with
+    {
+        OpenRouterApiKeyProtected = SecretProtector.Protect(openRouter),
+        NanoGptApiKeyProtected = SecretProtector.Protect(nanoGpt)
+    };
 }

@@ -4,7 +4,7 @@ internal sealed class TopicDialog : Form
 {
     private readonly TextBox _topicBox;
 
-    private TopicDialog(string? currentTopic)
+    private TopicDialog(string? currentTopic, string promptText)
     {
         Text = "AI Usage Monitor";
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -16,7 +16,7 @@ internal sealed class TopicDialog : Form
 
         var prompt = new Label
         {
-            Text = "Enter your ntfy.sh channel (topic) name:",
+            Text = promptText,
             AutoSize = true,
             Location = new Point(14, 14)
         };
@@ -52,9 +52,9 @@ internal sealed class TopicDialog : Form
         };
     }
 
-    internal static string? Prompt(IWin32Window owner, string? currentTopic)
+    internal static string? Prompt(IWin32Window owner, string? currentTopic, string promptText = "Enter your ntfy.sh channel (topic) name:")
     {
-        using var dialog = new TopicDialog(currentTopic);
+        using var dialog = new TopicDialog(currentTopic, promptText);
         return dialog.ShowDialog(owner) == DialogResult.OK
             ? dialog._topicBox.Text.Trim()
             : null;

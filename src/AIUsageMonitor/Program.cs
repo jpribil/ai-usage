@@ -36,6 +36,6 @@ internal static class Program
         var polling = new UsagePollingService(
             new ClaudeUsageProvider(httpClient, credentials, diagnosticLog),
             new CodexUsageProvider(httpClient, credentials, diagnosticLog));
-        Application.Run(new MainForm(settings, settingsStore, diagnosticLog, polling, new NtfyNotifier(httpClient, diagnosticLog), autostart));
+        Application.Run(new MainForm(settings, settingsStore, diagnosticLog, polling, new NtfyNotifier(httpClient, diagnosticLog), autostart, new RouterBalanceProvider(httpClient, diagnosticLog)));
     }
 }
