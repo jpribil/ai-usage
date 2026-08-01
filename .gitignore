@@ -6,4 +6,4 @@ TestResults/
 *.suo
 *.log
 publish/
-
+src/AIUsageMonitor/Resources/RouterIcons/*-source.svg

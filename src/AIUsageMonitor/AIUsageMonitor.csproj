@@ -16,4 +16,7 @@
     <PublishReadyToRun>false</PublishReadyToRun>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\RouterIcons\*-gray.png" />
+  </ItemGroup>
 </Project>

@@ -641,30 +641,11 @@ internal sealed class MainForm : Form
         using var muted = new SolidBrush(palette.MutedText);
         using var primary = new SolidBrush(palette.PrimaryText);
         var row = new Rectangle(bounds.Left + Scale(12), bounds.Top + offset, bounds.Width - Scale(24), Scale(20));
-        DrawRouterIcon(graphics, new Rectangle(row.Left, row.Top + Scale(1), Scale(15), Scale(15)), name == "OpenRouter", palette.MutedText);
+        var icon = name == "OpenRouter" ? RouterIcons.OpenRouter : RouterIcons.NanoGpt;
+        graphics.DrawImage(icon, new Rectangle(row.Left, row.Top + Scale(1), Scale(15), Scale(15)));
         graphics.DrawString(name, font, muted, new Rectangle(row.Left + Scale(22), row.Top, row.Width - Scale(22), row.Height), StringFormat.GenericDefault);
         var value = balance is decimal amount ? $"${amount:0.00}" : error ?? "—";
         graphics.DrawString(value, font, primary, row, RightFormat);
-    }
-
-    private static void DrawRouterIcon(Graphics graphics, Rectangle bounds, bool openRouter, Color color)
-    {
-        using var pen = new Pen(color, Math.Max(1, bounds.Width / 8f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-        if (openRouter)
-        {
-            var center = new PointF(bounds.Left + bounds.Width / 2f, bounds.Top + bounds.Height / 2f);
-            for (var i = 0; i < 6; i++)
-            {
-                var angle = i * Math.PI / 3;
-                graphics.DrawLine(pen, center, new PointF(center.X + (float)Math.Cos(angle) * bounds.Width * .38f, center.Y + (float)Math.Sin(angle) * bounds.Height * .38f));
-            }
-            graphics.DrawEllipse(pen, bounds.Left + bounds.Width / 3, bounds.Top + bounds.Height / 3, bounds.Width / 3, bounds.Height / 3);
-        }
-        else
-        {
-            graphics.DrawEllipse(pen, bounds);
-            graphics.DrawLine(pen, bounds.Left + bounds.Width * .32f, bounds.Bottom - bounds.Height * .28f, bounds.Right - bounds.Width * .32f, bounds.Top + bounds.Height * .28f);
-        }
     }
 
     private void DrawUsageRow(Graphics graphics, Rectangle card, int offset, string label, UsageLimit limit, UsageSection? usage, PollError? error, Palette palette)
