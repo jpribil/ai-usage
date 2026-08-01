@@ -20,10 +20,10 @@ internal static class Localizer
         ["system"] = "System Default", ["light"] = "Light", ["dark"] = "Dark", ["language"] = "Language",
         ["show"] = "Show Widget", ["topmost"] = "Always on Top", ["position"] = "Reset Position",
         ["autostart"] = "Start with Windows", ["channel"] = "Notification channel…", ["routerKeys"] = "Router API keys…",
-        ["updates"] = "Check for Updates", ["exit"] = "Exit", ["minute1"] = "1 Minute", ["minute5"] = "5 Minutes",
+        ["updates"] = "Check for Updates", ["updateToken"] = "GitHub update token…", ["exit"] = "Exit", ["minute1"] = "1 Minute", ["minute5"] = "5 Minutes",
         ["minute15"] = "15 Minutes", ["hour1"] = "1 Hour", ["now"] = "now", ["resets"] = "Resets",
         ["routers"] = "Routers", ["topicPrompt"] = "Enter your ntfy.sh channel (topic) name:", ["openRouterPrompt"] = "Enter OpenRouter management API key:",
-        ["nanoPrompt"] = "Enter nano-gpt.com API key:"
+        ["nanoPrompt"] = "Enter nano-gpt.com API key:", ["githubPrompt"] = "Enter read-only GitHub token for update checks:"
     };
 
     private static readonly IReadOnlyDictionary<string, string> Czech = new Dictionary<string, string>
@@ -32,9 +32,9 @@ internal static class Localizer
         ["system"] = "Výchozí systémové", ["light"] = "Světlý", ["dark"] = "Tmavý", ["language"] = "Jazyk",
         ["show"] = "Zobrazit widget", ["topmost"] = "Vždy nahoře", ["position"] = "Obnovit pozici",
         ["autostart"] = "Spustit s Windows", ["channel"] = "Notifikační kanál…", ["routerKeys"] = "API klíče routerů…",
-        ["updates"] = "Zkontrolovat aktualizace", ["exit"] = "Ukončit", ["minute1"] = "1 minuta", ["minute5"] = "5 minut",
+        ["updates"] = "Zkontrolovat aktualizace", ["updateToken"] = "GitHub token pro aktualizace…", ["exit"] = "Ukončit", ["minute1"] = "1 minuta", ["minute5"] = "5 minut",
         ["minute15"] = "15 minut", ["hour1"] = "1 hodina", ["now"] = "teď", ["resets"] = "Resety",
         ["routers"] = "Routery", ["topicPrompt"] = "Zadejte název kanálu (topic) pro ntfy.sh:", ["openRouterPrompt"] = "Zadejte management API klíč OpenRouteru:",
-        ["nanoPrompt"] = "Zadejte API klíč nano-gpt.com:"
+        ["nanoPrompt"] = "Zadejte API klíč nano-gpt.com:", ["githubPrompt"] = "Zadejte GitHub token pouze pro čtení releasů:"
     };
 }

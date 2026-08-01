@@ -13,8 +13,8 @@ internal static class AppMetadata
             .InformationalVersion.Split('+', 2)[0]
         ?? "0.0.0";
 
-    internal static string DisplayVersion => Version.EndsWith(".0", StringComparison.Ordinal)
-        ? Version[..^2]
+    internal static string DisplayVersion => Version.Split('.') is [var major, var minor, ..]
+        ? $"{major}.{minor.PadLeft(2, '0')}"
         : Version;
 
     internal static string Title => $"{ProductName} {DisplayVersion}";

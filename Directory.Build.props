@@ -1,10 +1,10 @@
 <Project>
   <!-- Single source of truth for every user-visible and executable version. -->
   <PropertyGroup>
-    <Version>2.0.0-alpha.7</Version>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
-    <InformationalVersion>2.0.0-alpha.7</InformationalVersion>
+    <Version>2.8.0</Version>
+    <AssemblyVersion>2.8.0.0</AssemblyVersion>
+    <FileVersion>2.8.0.0</FileVersion>
+    <InformationalVersion>2.8.0</InformationalVersion>
     <Company>AI Usage Monitor</Company>
     <Product>AI Usage Monitor</Product>
     <Copyright>Copyright © 2026</Copyright>

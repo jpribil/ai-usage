@@ -16,6 +16,7 @@ internal sealed class MainForm : Form
     private readonly NtfyNotifier _notifier;
     private readonly AutostartService _autostart;
     private readonly RouterBalanceProvider _routerBalances;
+    private readonly GitHubUpdateService _updates;
     private readonly NotifyIcon _trayIcon;
     private readonly ContextMenuStrip _menu = new();
     private readonly Dictionary<UsageLimit, Rectangle> _checkboxBounds = [];
@@ -34,7 +35,7 @@ internal sealed class MainForm : Form
     private PollError? _codexError;
     private int _consecutiveTransientFailures;
 
-    internal MainForm(AppSettings settings, SettingsStore settingsStore, DiagnosticLog diagnosticLog, UsagePollingService polling, NtfyNotifier notifier, AutostartService autostart, RouterBalanceProvider routerBalances)
+    internal MainForm(AppSettings settings, SettingsStore settingsStore, DiagnosticLog diagnosticLog, UsagePollingService polling, NtfyNotifier notifier, AutostartService autostart, RouterBalanceProvider routerBalances, GitHubUpdateService updates)
     {
         _settings = settings;
         _settingsStore = settingsStore;
@@ -43,6 +44,7 @@ internal sealed class MainForm : Form
         _notifier = notifier;
         _autostart = autostart;
         _routerBalances = routerBalances;
+        _updates = updates;
 
         AutoScaleMode = AutoScaleMode.Dpi;
         DoubleBuffered = true;
@@ -193,7 +195,8 @@ internal sealed class MainForm : Form
         _menu.Items.Add(CheckItem(T("autostart"), _autostart.IsEnabled, ToggleAutostart));
         _menu.Items.Add(Item(T("channel"), ConfigureNotificationChannel));
         _menu.Items.Add(Item(T("routerKeys"), ConfigureRouterKeys));
-        _menu.Items.Add(Item($"v{AppMetadata.DisplayVersion} - {T("updates")}", () => _diagnosticLog.Write("Update check requested.")));
+        _menu.Items.Add(Item(T("updateToken"), ConfigureGitHubToken));
+        _menu.Items.Add(Item($"v{AppMetadata.DisplayVersion} - {T("updates")}", () => _ = CheckForUpdatesAsync()));
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(Item(T("exit"), ExitApplication));
     }
@@ -327,6 +330,20 @@ internal sealed class MainForm : Form
         if (nanoGpt is null) return;
         SaveSettings(_settings.WithRouterKeys(openRouter, nanoGpt));
         _ = PollAsync(force: true);
+    }
+
+    private void ConfigureGitHubToken()
+    {
+        var token = TopicDialog.Prompt(this, _settings.GitHubUpdateToken, T("githubPrompt"));
+        if (token is not null) SaveSettings(_settings.WithGitHubUpdateToken(token));
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        var result = await _updates.CheckAsync(_settings.GitHubUpdateToken, _pollCancellation.Token);
+        var message = result.Error is not null ? $"Aktualizaci nelze ověřit: {result.Error}" : result.IsNewer
+            ? $"Je dostupná verze {result.LatestVersion!.Major}.{result.LatestVersion.Minor:D2}." : "Aplikace je aktuální.";
+        MessageBox.Show(this, message, AppMetadata.ProductName, MessageBoxButtons.OK, result.Error is null ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
     }
 
     private void ToggleNotification(UsageLimit limit)
@@ -624,9 +641,30 @@ internal sealed class MainForm : Form
         using var muted = new SolidBrush(palette.MutedText);
         using var primary = new SolidBrush(palette.PrimaryText);
         var row = new Rectangle(bounds.Left + Scale(12), bounds.Top + offset, bounds.Width - Scale(24), Scale(20));
-        graphics.DrawString(name, font, muted, row, StringFormat.GenericDefault);
+        DrawRouterIcon(graphics, new Rectangle(row.Left, row.Top + Scale(1), Scale(15), Scale(15)), name == "OpenRouter", palette.MutedText);
+        graphics.DrawString(name, font, muted, new Rectangle(row.Left + Scale(22), row.Top, row.Width - Scale(22), row.Height), StringFormat.GenericDefault);
         var value = balance is decimal amount ? $"${amount:0.00}" : error ?? "—";
         graphics.DrawString(value, font, primary, row, RightFormat);
+    }
+
+    private static void DrawRouterIcon(Graphics graphics, Rectangle bounds, bool openRouter, Color color)
+    {
+        using var pen = new Pen(color, Math.Max(1, bounds.Width / 8f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        if (openRouter)
+        {
+            var center = new PointF(bounds.Left + bounds.Width / 2f, bounds.Top + bounds.Height / 2f);
+            for (var i = 0; i < 6; i++)
+            {
+                var angle = i * Math.PI / 3;
+                graphics.DrawLine(pen, center, new PointF(center.X + (float)Math.Cos(angle) * bounds.Width * .38f, center.Y + (float)Math.Sin(angle) * bounds.Height * .38f));
+            }
+            graphics.DrawEllipse(pen, bounds.Left + bounds.Width / 3, bounds.Top + bounds.Height / 3, bounds.Width / 3, bounds.Height / 3);
+        }
+        else
+        {
+            graphics.DrawEllipse(pen, bounds);
+            graphics.DrawLine(pen, bounds.Left + bounds.Width * .32f, bounds.Bottom - bounds.Height * .28f, bounds.Right - bounds.Width * .32f, bounds.Top + bounds.Height * .28f);
+        }
     }
 
     private void DrawUsageRow(Graphics graphics, Rectangle card, int offset, string label, UsageLimit limit, UsageSection? usage, PollError? error, Palette palette)
