@@ -181,30 +181,30 @@ internal sealed class MainForm : Form
         _menu.Items.Add(CheckItem("Claude Code", _settings.ShowClaudeCode, ToggleClaude));
         _menu.Items.Add(CheckItem("ChatGPT", _settings.ShowCodex, ToggleCodex));
         _menu.Items.Add(new ToolStripSeparator());
-        _menu.Items.Add(Item("Refresh", () => _ = PollAsync(force: true)));
+        _menu.Items.Add(Item(T("refresh"), () => _ = PollAsync(force: true)));
         _menu.Items.Add(CreateFrequencyMenu());
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(CreateAppearanceMenu());
-        _menu.Items.Add(Item("Language", null, enabled: false));
-        _menu.Items.Add(CheckItem("Show Widget", _settings.WidgetVisible, ToggleWidgetVisibility));
-        _menu.Items.Add(CheckItem("Always on Top", _settings.AlwaysOnTop, ToggleTopMost));
-        _menu.Items.Add(Item("Reset Position", ResetPosition));
+        _menu.Items.Add(CreateLanguageMenu());
+        _menu.Items.Add(CheckItem(T("show"), _settings.WidgetVisible, ToggleWidgetVisibility));
+        _menu.Items.Add(CheckItem(T("topmost"), _settings.AlwaysOnTop, ToggleTopMost));
+        _menu.Items.Add(Item(T("position"), ResetPosition));
         _menu.Items.Add(new ToolStripSeparator());
-        _menu.Items.Add(CheckItem("Start with Windows", _autostart.IsEnabled, ToggleAutostart));
-        _menu.Items.Add(Item("Notification channel…", ConfigureNotificationChannel));
-        _menu.Items.Add(Item("Router API keys…", ConfigureRouterKeys));
-        _menu.Items.Add(Item($"v{AppMetadata.DisplayVersion} - Check for Updates", () => _diagnosticLog.Write("Update check requested.")));
+        _menu.Items.Add(CheckItem(T("autostart"), _autostart.IsEnabled, ToggleAutostart));
+        _menu.Items.Add(Item(T("channel"), ConfigureNotificationChannel));
+        _menu.Items.Add(Item(T("routerKeys"), ConfigureRouterKeys));
+        _menu.Items.Add(Item($"v{AppMetadata.DisplayVersion} - {T("updates")}", () => _diagnosticLog.Write("Update check requested.")));
         _menu.Items.Add(new ToolStripSeparator());
-        _menu.Items.Add(Item("Exit", ExitApplication));
+        _menu.Items.Add(Item(T("exit"), ExitApplication));
     }
 
     private ToolStripMenuItem CreateFrequencyMenu()
     {
-        var parent = new ToolStripMenuItem("Update Frequency");
+        var parent = new ToolStripMenuItem(T("frequency"));
         foreach (var (label, milliseconds) in new[]
                  {
-                     ("1 Minute", 60_000), ("5 Minutes", 300_000),
-                     ("15 Minutes", 900_000), ("1 Hour", 3_600_000)
+                     (T("minute1"), 60_000), (T("minute5"), 300_000),
+                     (T("minute15"), 900_000), (T("hour1"), 3_600_000)
                  })
         {
             parent.DropDownItems.Add(CheckItem(label, _settings.PollIntervalMilliseconds == milliseconds,
@@ -216,13 +216,22 @@ internal sealed class MainForm : Form
 
     private ToolStripMenuItem CreateAppearanceMenu()
     {
-        var parent = new ToolStripMenuItem("Appearance");
-        parent.DropDownItems.Add(CheckItem("System Default", _settings.Theme is null,
+        var parent = new ToolStripMenuItem(T("appearance"));
+        parent.DropDownItems.Add(CheckItem(T("system"), _settings.Theme is null,
             () => SaveSettings(_settings with { Theme = null })));
-        parent.DropDownItems.Add(CheckItem("Light", _settings.Theme == "light",
+        parent.DropDownItems.Add(CheckItem(T("light"), _settings.Theme == "light",
             () => SaveSettings(_settings with { Theme = "light" })));
-        parent.DropDownItems.Add(CheckItem("Dark", _settings.Theme == "dark",
+        parent.DropDownItems.Add(CheckItem(T("dark"), _settings.Theme == "dark",
             () => SaveSettings(_settings with { Theme = "dark" })));
+        return parent;
+    }
+
+    private ToolStripMenuItem CreateLanguageMenu()
+    {
+        var parent = new ToolStripMenuItem(T("language"));
+        parent.DropDownItems.Add(CheckItem(T("system"), _settings.Language is null, () => SaveSettings(_settings with { Language = null })));
+        parent.DropDownItems.Add(CheckItem("English", _settings.Language == "en", () => SaveSettings(_settings with { Language = "en" })));
+        parent.DropDownItems.Add(CheckItem("Čeština", _settings.Language == "cs", () => SaveSettings(_settings with { Language = "cs" })));
         return parent;
     }
 
@@ -303,7 +312,7 @@ internal sealed class MainForm : Form
 
     private void ConfigureNotificationChannel()
     {
-        var result = TopicDialog.Prompt(this, _settings.NtfyTopic);
+        var result = TopicDialog.Prompt(this, _settings.NtfyTopic, T("topicPrompt"));
         if (result is not null)
         {
             SaveSettings(_settings with { NtfyTopic = string.IsNullOrEmpty(result) ? null : result });
@@ -312,9 +321,9 @@ internal sealed class MainForm : Form
 
     private void ConfigureRouterKeys()
     {
-        var openRouter = TopicDialog.Prompt(this, _settings.OpenRouterApiKey, "Enter OpenRouter management API key:");
+        var openRouter = TopicDialog.Prompt(this, _settings.OpenRouterApiKey, T("openRouterPrompt"));
         if (openRouter is null) return;
-        var nanoGpt = TopicDialog.Prompt(this, _settings.NanoGptApiKey, "Enter nano-gpt.com API key:");
+        var nanoGpt = TopicDialog.Prompt(this, _settings.NanoGptApiKey, T("nanoPrompt"));
         if (nanoGpt is null) return;
         SaveSettings(_settings.WithRouterKeys(openRouter, nanoGpt));
         _ = PollAsync(force: true);
@@ -485,11 +494,11 @@ internal sealed class MainForm : Form
         var count = ActiveServices().Count;
         var scale = DeviceDpi / 96f * UiScale;
         var cardWidth = Scale(274, scale);
-        var cardHeight = Scale(126, scale);
         var padding = Scale(14, scale);
         var titleHeight = Scale(34, scale);
         var gap = Scale(12, scale);
-        ClientSize = new Size(2 * padding + cardWidth, titleHeight + 2 * padding + count * cardHeight + (count - 1) * gap);
+        var totalCardHeight = ActiveServices().Sum(service => CardHeight(service, scale));
+        ClientSize = new Size(2 * padding + cardWidth, titleHeight + 2 * padding + totalCardHeight + (count - 1) * gap);
         Location = ClampToVirtualScreen(Location);
     }
 
@@ -512,11 +521,12 @@ internal sealed class MainForm : Form
     {
         var scale = DeviceDpi / 96f * UiScale;
         var cardWidth = Scale(274, scale);
-        var cardHeight = Scale(126, scale);
         var padding = Scale(14, scale);
         var titleHeight = Scale(34, scale);
         var gap = Scale(12, scale);
-        return new Rectangle(padding, titleHeight + padding + index * (cardHeight + gap), cardWidth, cardHeight);
+        var services = ActiveServices();
+        var y = titleHeight + padding + services.Take(index).Sum(service => CardHeight(service, scale) + gap);
+        return new Rectangle(padding, y, cardWidth, CardHeight(services[index], scale));
     }
 
     private void DrawTitleBar(Graphics graphics, Palette palette)
@@ -575,7 +585,7 @@ internal sealed class MainForm : Form
         if (credits is > 0)
         {
             using var badgeFont = CreateFont(10, FontStyle.Regular);
-            var badgeText = $"Resets: {credits}";
+            var badgeText = $"{T("resets")}: {credits}";
             var badgeWidth = (int)Math.Ceiling(graphics.MeasureString(badgeText, badgeFont).Width) + Scale(12);
             var badge = new Rectangle(bounds.Right - Scale(12) - badgeWidth, bounds.Top + Scale(9), badgeWidth, Scale(16));
             using var badgeBrush = new SolidBrush(palette.Track);
@@ -595,7 +605,7 @@ internal sealed class MainForm : Form
         }
         else
         {
-            DrawUsageRow(graphics, bounds, Scale(62), "7d", UsageLimit.CodexWeekly, usage?.Weekly, error, palette);
+            DrawUsageRow(graphics, bounds, Scale(43), "7d", UsageLimit.CodexWeekly, usage?.Weekly, error, palette);
         }
     }
 
@@ -603,7 +613,7 @@ internal sealed class MainForm : Form
     {
         using var titleFont = CreateFont(15, FontStyle.Bold);
         using var text = new SolidBrush(palette.PrimaryText);
-        graphics.DrawString("Routery", titleFont, text, bounds.Left + Scale(12), bounds.Top + Scale(8));
+        graphics.DrawString(T("routers"), titleFont, text, bounds.Left + Scale(12), bounds.Top + Scale(8));
         DrawRouterBalance(graphics, bounds, Scale(47), "OpenRouter", _routerUsage?.OpenRouterUsd, _routerUsage?.OpenRouterError, palette);
         DrawRouterBalance(graphics, bounds, Scale(84), "nano-gpt.com", _routerUsage?.NanoGptUsd, _routerUsage?.NanoGptError, palette);
     }
@@ -667,7 +677,7 @@ internal sealed class MainForm : Form
         graphics.FillPath(inner, RoundedRectangle(Rectangle.Inflate(bounds, -inset, -inset), Scale(2)));
     }
 
-    private static string DisplayText(UsageSection? usage, PollError? error)
+    private string DisplayText(UsageSection? usage, PollError? error)
     {
         if (usage is null)
         {
@@ -686,7 +696,7 @@ internal sealed class MainForm : Form
         var remaining = reset - DateTimeOffset.UtcNow;
         if (remaining <= TimeSpan.Zero)
         {
-            return $"{percentage} · now";
+            return $"{percentage} · {T("now")}";
         }
         return remaining.TotalDays >= 1
             ? $"{percentage} · {(int)remaining.TotalDays}:{remaining.Hours:00}:{remaining.Minutes:00}"
@@ -706,6 +716,9 @@ internal sealed class MainForm : Form
         (int)Math.Round(start.R + (end.R - start.R) * amount),
         (int)Math.Round(start.G + (end.G - start.G) * amount),
         (int)Math.Round(start.B + (end.B - start.B) * amount));
+
+    private int CardHeight(ServiceKind service, float scale) => Scale(service == ServiceKind.Codex ? 86 : 126, scale);
+    private string T(string key) => Localizer.Text(_settings, key);
 
     private Rectangle CloseButtonBounds => new(ClientSize.Width - Scale(12) - Scale(22), Scale(6), Scale(22), Scale(22));
 
