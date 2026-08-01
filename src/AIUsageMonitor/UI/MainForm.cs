@@ -552,10 +552,13 @@ internal sealed class MainForm : Form
         graphics.FillRectangle(background, new Rectangle(Point.Empty, new Size(ClientSize.Width, Scale(34))));
         using var border = new Pen(palette.Border);
         graphics.DrawLine(border, 0, Scale(34) - 1, ClientSize.Width, Scale(34) - 1);
-        DrawGauge(graphics, new Rectangle(Scale(12), Scale(7), Scale(20), Scale(20)));
+        var titleBarHeight = Scale(34);
+        var iconSize = Scale(20);
+        DrawGauge(graphics, new Rectangle(Scale(12), (titleBarHeight - iconSize) / 2, iconSize, iconSize));
         using var font = CreateFont(14, FontStyle.Bold);
         using var text = new SolidBrush(palette.PrimaryText);
-        graphics.DrawString(AppMetadata.Title, font, text, Scale(40), Scale(8));
+        graphics.DrawString(AppMetadata.Title, font, text,
+            new Rectangle(Scale(40), 0, ClientSize.Width - Scale(80), titleBarHeight), TitleFormat);
 
         using var closeBackground = new SolidBrush(palette.CloseBackground);
         graphics.FillPath(closeBackground, RoundedRectangle(CloseButtonBounds, Scale(5)));
@@ -800,6 +803,7 @@ internal sealed class MainForm : Form
     }
 
     private static readonly StringFormat CenteredFormat = new() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+    private static readonly StringFormat TitleFormat = new() { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
     private static readonly StringFormat NameFormat = new() { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
     private static readonly StringFormat RightFormat = new() { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Near, Trimming = StringTrimming.EllipsisCharacter };
     private static readonly StringFormat EllipsisFormat = new() { LineAlignment = StringAlignment.Near, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };

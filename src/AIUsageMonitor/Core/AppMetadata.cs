@@ -17,6 +17,6 @@ internal static class AppMetadata
         ? $"{major}.{minor.PadLeft(2, '0')}"
         : Version;
 
-    internal static string Title => $"{ProductName} {DisplayVersion}";
+    internal static string Title => ProductName;
     internal static string UserAgent => $"ai-usage-monitor/{Version}";
 }
