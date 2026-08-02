@@ -24,7 +24,6 @@ internal sealed record AppSettings
     public string? NtfyTopic { get; init; }
     public string? OpenRouterApiKeyProtected { get; init; }
     public string? NanoGptApiKeyProtected { get; init; }
-    public string? GitHubUpdateTokenProtected { get; init; }
     public bool[] ArmedLimits { get; init; } = new bool[3];
 
     internal AppSettings Normalize()
@@ -57,12 +56,9 @@ internal sealed record AppSettings
 
     internal string? OpenRouterApiKey => SecretProtector.Unprotect(OpenRouterApiKeyProtected);
     internal string? NanoGptApiKey => SecretProtector.Unprotect(NanoGptApiKeyProtected);
-    internal string? GitHubUpdateToken => SecretProtector.Unprotect(GitHubUpdateTokenProtected);
     internal AppSettings WithRouterKeys(string? openRouter, string? nanoGpt) => this with
     {
         OpenRouterApiKeyProtected = SecretProtector.Protect(openRouter),
         NanoGptApiKeyProtected = SecretProtector.Protect(nanoGpt)
     };
-
-    internal AppSettings WithGitHubUpdateToken(string? token) => this with { GitHubUpdateTokenProtected = SecretProtector.Protect(token) };
 }

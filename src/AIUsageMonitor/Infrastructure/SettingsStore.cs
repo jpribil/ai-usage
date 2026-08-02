@@ -25,9 +25,14 @@ internal sealed class SettingsStore(DiagnosticLog diagnosticLog)
                 return new AppSettings().Normalize();
             }
 
-            var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(_path), SerializerOptions)
-                ?? new AppSettings();
-            return settings.Normalize();
+            var json = File.ReadAllText(_path);
+            var settings = (JsonSerializer.Deserialize<AppSettings>(json, SerializerOptions) ?? new AppSettings()).Normalize();
+            if (json.Contains("\"github_update_token_protected\"", StringComparison.Ordinal))
+            {
+                Save(settings);
+            }
+
+            return settings;
         }
         catch (Exception exception) when (exception is IOException or JsonException or UnauthorizedAccessException)
         {

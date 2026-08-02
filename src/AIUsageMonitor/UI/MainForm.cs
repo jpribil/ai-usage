@@ -224,7 +224,6 @@ internal sealed class MainForm : Form
         _menu.Items.Add(CheckItem(T("autostart"), _autostart.IsEnabled, ToggleAutostart));
         _menu.Items.Add(Item(T("channel"), ConfigureNotificationChannel));
         _menu.Items.Add(Item(T("routerKeys"), ConfigureRouterKeys));
-        _menu.Items.Add(Item(T("updateToken"), ConfigureGitHubToken));
         _menu.Items.Add(Item($"v{AppMetadata.DisplayVersion} - {T("updates")}", () => _ = CheckForUpdatesAsync()));
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(Item(T("exit"), ExitApplication));
@@ -358,11 +357,10 @@ internal sealed class MainForm : Form
 
     private void ConfigureRouterKeys()
     {
-        var openRouter = TopicDialog.Prompt(this, _settings.OpenRouterApiKey, T("openRouterPrompt"));
-        if (openRouter is null) return;
-        var nanoGpt = TopicDialog.Prompt(this, _settings.NanoGptApiKey, T("nanoPrompt"));
-        if (nanoGpt is null) return;
-        SaveSettings(_settings.WithRouterKeys(openRouter, nanoGpt));
+        var keys = RouterKeysDialog.Prompt(this, _settings.OpenRouterApiKey, _settings.NanoGptApiKey,
+            T("routerDialogTitle"), T("openRouterKey"), T("nanoGptKey"), T("save"), T("cancel"));
+        if (keys is null) return;
+        SaveSettings(_settings.WithRouterKeys(keys.Value.OpenRouter, keys.Value.NanoGpt));
         _ = PollAsync(force: true);
     }
 
@@ -372,15 +370,9 @@ internal sealed class MainForm : Form
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 
-    private void ConfigureGitHubToken()
-    {
-        var token = TopicDialog.Prompt(this, _settings.GitHubUpdateToken, T("githubPrompt"));
-        if (token is not null) SaveSettings(_settings.WithGitHubUpdateToken(token));
-    }
-
     private async Task CheckForUpdatesAsync()
     {
-        var result = await _updates.CheckAsync(_settings.GitHubUpdateToken, _pollCancellation.Token);
+        var result = await _updates.CheckAsync(_pollCancellation.Token);
         var message = result.Error is not null ? $"Aktualizaci nelze ověřit: {result.Error}" : result.IsNewer
             ? $"Je dostupná verze {result.LatestVersion!.Major}.{result.LatestVersion.Minor:D2}." : "Aplikace je aktuální.";
         MessageBox.Show(this, message, AppMetadata.ProductName, MessageBoxButtons.OK, result.Error is null ? MessageBoxIcon.Information : MessageBoxIcon.Warning);

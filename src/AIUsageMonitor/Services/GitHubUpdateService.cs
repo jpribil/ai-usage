@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text.Json;
 using AIUsageMonitor.Core;
 
@@ -10,12 +9,11 @@ internal sealed class GitHubUpdateService(HttpClient httpClient)
 {
     internal const string Repository = "jpribil/ai-usage";
 
-    internal async Task<UpdateCheckResult> CheckAsync(string? token, CancellationToken cancellationToken)
+    internal async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{Repository}/releases/latest");
         request.Headers.UserAgent.ParseAdd(AppMetadata.UserAgent);
         request.Headers.Accept.ParseAdd("application/vnd.github+json");
-        if (!string.IsNullOrWhiteSpace(token)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         try
         {
             using var response = await httpClient.SendAsync(request, cancellationToken);

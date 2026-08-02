@@ -49,11 +49,11 @@ Right-click opens the full menu: manual refresh, refresh interval, appearance, l
 ## Privacy and local files
 
 - `settings.json` is created **next to the EXE**, never in AppData.
-- Router API keys and the update-check token are encrypted with Windows DPAPI for the current user before being written to settings.
+- Router API keys are encrypted with Windows DPAPI for the current user before being written to settings.
 - Claude Code and Codex login tokens are read from their existing local files only; this application does not modify them.
 - The diagnostic log is at `%TEMP%\\ai-usage-monitor.log`; startup failures are recorded separately in `%TEMP%\\ai-usage-monitor-startup-errors.log`.
 
-For update checks against the private repository, configure a GitHub token with read-only access to that repository's contents and releases.
+Update checks use the public GitHub Releases API and do not require a GitHub token.
 
 ## Development and releases
 
