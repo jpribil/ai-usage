@@ -89,7 +89,7 @@ internal sealed class CredentialStore(DiagnosticLog diagnosticLog)
             return await RunSilentlyAsync("wsl.exe", ["-d", wsl.Distro, "--", "bash", "-lic", "claude -p ."], TimeSpan.FromSeconds(30), cancellationToken);
         }
 
-        return await RunSilentlyAsync("claude.cmd", ["-p", "."], TimeSpan.FromSeconds(30), cancellationToken, sanitizeClaudeEnvironment: true);
+        return await RunSilentlyAsync(ClaudeExecutable(), ["-p", "."], TimeSpan.FromSeconds(30), cancellationToken, sanitizeClaudeEnvironment: true);
     }
 
     internal Task<bool> RefreshCodexAsync(CancellationToken cancellationToken) =>
@@ -156,6 +156,12 @@ internal sealed class CredentialStore(DiagnosticLog diagnosticLog)
         {
             return null;
         }
+    }
+
+    private static string ClaudeExecutable()
+    {
+        var standardPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "bin", "claude.exe");
+        return File.Exists(standardPath) ? standardPath : "claude.exe";
     }
 
     private static string DecodeConsoleBytes(byte[] bytes)

@@ -30,7 +30,7 @@ Widget data nesestavuje odhadem a neposílá je přes žádný vlastní server. 
 
 | Služba | Co widget ukazuje | Zdroj |
 | --- | --- | --- |
-| Claude Code | Využití 5 h a 7 dní, čas resetu | Přihlašovací token Claude Code z `%USERPROFILE%\\.claude\\.credentials.json`, případně z nalezené WSL distribuce; dotaz na Anthropic OAuth usage endpoint. Pokud hlavní odpověď limity neobsahuje, aplikace přečte rate-limit hlavičky odpovědi Anthropic API. |
+| Claude Code | Využití 5 h a 7 dní, čas resetu | Přihlašovací token Claude Code z `%USERPROFILE%\\.claude\\.credentials.json`, případně z nalezené WSL distribuce; dotaz na Anthropic OAuth usage endpoint. Pro obnovení přihlášení aplikace používá standardní `%USERPROFILE%\\.local\\bin\\claude.exe`. Pokud hlavní odpověď limity neobsahuje, aplikace přečte rate-limit hlavičky odpovědi Anthropic API. |
 | Codex | Využití krátkého a týdenního okna, čas resetu, zbývající resety | Přihlašovací token Codexu z `%USERPROFILE%\\.codex\\auth.json` (nebo z `CODEX_HOME\\auth.json`); dotaz na usage endpoint účtu ChatGPT/Codex. |
 | OpenRouter | Zbývající předplacené USD | API `GET /api/v1/credits`: aplikace počítá `total_credits − total_usage`. Je nutný **management API key** OpenRouteru. |
 | nano-gpt.com | Aktuální USD zůstatek | API `POST /api/check-balance` s hlavičkou `x-api-key`; je nutný API klíč nano-gpt.com. |
