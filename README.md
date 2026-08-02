@@ -1,67 +1,67 @@
 # AI Usage Monitor
 
-Malý přenosný widget pro Windows, který zobrazuje aktuální využití limitů **Claude Code** a **Codexu** i předplacený zůstatek na **OpenRouteru** a **nano-gpt.com**. Běží v oznamovací oblasti, lze jej nechat vždy nahoře a jeho nastavení jsou vedle EXE.
+A small portable Windows widget for monitoring **Claude Code** and **Codex** usage limits, plus prepaid balances on **OpenRouter** and **nano-gpt.com**. It lives in the system tray, can stay on top, and keeps its settings beside the EXE.
 
-Aktuální instalační soubor je vždy v [GitHub Releases](https://github.com/jpribil/ai-usage/releases). Projekt je určen pro Windows x64.
+The current installer is always available in [GitHub Releases](https://github.com/jpribil/ai-usage/releases). The project targets Windows x64.
 
-## Ukázka
+## Preview
 
 <p align="center">
-  <img src="docs/images/widget-dark.png" alt="AI Usage Monitor v tmavém motivu" width="300">
-  <img src="docs/images/widget-light.png" alt="AI Usage Monitor ve světlém motivu" width="300">
+  <img src="docs/images/widget-dark.png" alt="AI Usage Monitor in dark mode" width="300">
+  <img src="docs/images/widget-light.png" alt="AI Usage Monitor in light mode" width="300">
 </p>
 
-<p align="center"><em>Tmavý a světlý motiv widgetu.</em></p>
+<p align="center"><em>Dark and light widget themes.</em></p>
 
-## Co umí
+## Features
 
-- Zobrazuje 5hodinový a sedmidenní limit Claude Code včetně času resetu.
-- Zobrazuje sedmidenní limit Codexu a případné zbývající resety.
-- Ukazuje dolarový zůstatek OpenRouteru a nano-gpt.com.
-- Kliknutí na zůstatek routeru otevře přímo jeho stránku s kredity; kurzor nad odkazem je ručička.
-- Obnovuje údaje po 1, 5, 15 nebo 60 minutách, případně ručně z menu.
-- Umí upozornit přes [ntfy.sh](https://ntfy.sh), když se vybraný limit resetuje. Zaškrtnutí u řádku limit jednorázově aktivuje; po úspěšném odeslání se automaticky zruší. V nastavení kanálu je tlačítko pro odeslání testovací zprávy.
-- Podporuje češtinu, angličtinu, světlý/tmavý motiv, automatické spuštění s Windows a režim vždy nahoře.
-- Kontroluje nové vydání v tomto soukromém GitHub repozitáři.
+- Shows Claude Code's five-hour and seven-day usage limits, including reset times.
+- Shows Codex's seven-day limit and available reset credits, when provided by the account.
+- Shows the remaining USD balance for OpenRouter and nano-gpt.com.
+- Clicking a router balance opens its credits page; the cursor changes to a hand over the link.
+- Refreshes automatically every 1, 5, 15, or 60 minutes, or on demand from the menu.
+- Sends a one-time [ntfy.sh](https://ntfy.sh) notification when an armed limit resets. The checkbox is cleared only after successful delivery, and the channel dialog includes a test-send button.
+- Supports Czech and English, dark/light themes, Windows startup, and always-on-top mode.
+- Checks this private GitHub repository for newer releases.
 
-## Odkud se berou údaje
+## Data sources
 
-Widget data nesestavuje odhadem a neposílá je přes žádný vlastní server. Čte je přímo z účtu a API poskytovatele na počítači uživatele.
+The widget does not estimate usage or send it through a separate application server. It reads data directly from the signed-in account or the provider API on the user's computer.
 
-| Služba | Co widget ukazuje | Zdroj |
+| Service | What the widget displays | Source |
 | --- | --- | --- |
-| Claude Code | Využití 5 h a 7 dní, čas resetu | Přihlašovací token Claude Code z `%USERPROFILE%\\.claude\\.credentials.json`, případně z nalezené WSL distribuce; dotaz na Anthropic OAuth usage endpoint. Pro obnovení přihlášení aplikace používá standardní `%USERPROFILE%\\.local\\bin\\claude.exe`. Pokud hlavní odpověď limity neobsahuje, aplikace přečte rate-limit hlavičky odpovědi Anthropic API. |
-| Codex | Využití krátkého a týdenního okna, čas resetu, zbývající resety | Přihlašovací token Codexu z `%USERPROFILE%\\.codex\\auth.json` (nebo z `CODEX_HOME\\auth.json`); dotaz na usage endpoint účtu ChatGPT/Codex. |
-| OpenRouter | Zbývající předplacené USD | API `GET /api/v1/credits`: aplikace počítá `total_credits − total_usage`. Je nutný **management API key** OpenRouteru. |
-| nano-gpt.com | Aktuální USD zůstatek | API `POST /api/check-balance` s hlavičkou `x-api-key`; je nutný API klíč nano-gpt.com. |
+| Claude Code | Five-hour and seven-day usage, reset time | The Claude Code login token from `%USERPROFILE%\\.claude\\.credentials.json`, or from a detected WSL distribution; queried through the Anthropic OAuth usage endpoint. The standard `%USERPROFILE%\\.local\\bin\\claude.exe` renews the login when needed. If the main response does not include limits, the app reads Anthropic API rate-limit response headers. |
+| Codex | Short-window and weekly usage, reset time, available reset credits | The Codex login token from `%USERPROFILE%\\.codex\\auth.json` (or `CODEX_HOME\\auth.json`); queried through the ChatGPT/Codex account usage endpoint. |
+| OpenRouter | Remaining prepaid USD | `GET /api/v1/credits`; the app calculates `total_credits − total_usage`. An OpenRouter **management API key** is required. |
+| nano-gpt.com | Current USD balance | `POST /api/check-balance` with the `x-api-key` header. A nano-gpt.com API key is required. |
 
-Zůstatek OpenRouteru otevře [nastavení kreditů](https://openrouter.ai/settings/credits), nano-gpt.com otevře [stránku zůstatku](https://nano-gpt.com/balance).
+The OpenRouter balance opens [Credits settings](https://openrouter.ai/settings/credits); the nano-gpt.com balance opens the [balance page](https://nano-gpt.com/balance).
 
-## Použití
+## Getting started
 
-1. Stáhněte `AIUsageMonitor.exe` z [Releases](https://github.com/jpribil/ai-usage/releases) a uložte jej do vlastní složky.
-2. Ujistěte se, že je nainstalovaný **.NET 8 Windows Desktop Runtime (x64)**. EXE je záměrně framework-dependent, aby byl malý.
-3. Spusťte aplikaci. Claude Code a Codex fungují, pokud jste v odpovídajícím CLI již přihlášeni.
-4. Klikněte pravým tlačítkem na widget a v položce **API klíče routerů…** zadejte klíč OpenRouteru a/nebo nano-gpt.com.
+1. Download `AIUsageMonitor.exe` from [Releases](https://github.com/jpribil/ai-usage/releases) into a folder of your choice.
+2. Install the **.NET 8 Windows Desktop Runtime (x64)**. The EXE is intentionally framework-dependent to keep it small.
+3. Start the application. Claude Code and Codex work when their respective CLIs are signed in.
+4. Right-click the widget and select **Router API keys…** to enter an OpenRouter and/or nano-gpt.com key.
 
-Pravé tlačítko otevře celé menu: ruční obnovení, interval, vzhled, jazyk, upozornění, start s Windows, kontrolu aktualizací a ukončení aplikace. Dvojklik na ikonu v oznamovací oblasti widget schová nebo znovu zobrazí.
+Right-click opens the full menu: manual refresh, refresh interval, appearance, language, notifications, Windows startup, update checks, and exit. Double-clicking the tray icon hides or shows the widget.
 
-## Soukromí a soubory
+## Privacy and local files
 
-- `settings.json` se vytváří **ve stejné složce jako EXE**, nikoli v AppData.
-- API klíče routerů a token pro kontrolu aktualizací se před uložením šifrují pomocí Windows DPAPI pro aktuálního uživatele.
-- Přihlašovací tokeny Claude Code a Codexu se pouze čtou z jejich existujících lokálních souborů; aplikace je nemění.
-- Diagnostický log je v `%TEMP%\\ai-usage-monitor.log`; při chybě startu je samostatný `%TEMP%\\ai-usage-monitor-startup-errors.log`.
+- `settings.json` is created **next to the EXE**, never in AppData.
+- Router API keys and the update-check token are encrypted with Windows DPAPI for the current user before being written to settings.
+- Claude Code and Codex login tokens are read from their existing local files only; this application does not modify them.
+- The diagnostic log is at `%TEMP%\\ai-usage-monitor.log`; startup failures are recorded separately in `%TEMP%\\ai-usage-monitor-startup-errors.log`.
 
-Pro soukromý repozitář vyžaduje kontrola aktualizací v menu GitHub token s přístupem pouze pro čtení obsahu/releasů daného repozitáře.
+For update checks against the private repository, configure a GitHub token with read-only access to that repository's contents and releases.
 
-## Vývoj a vydání
+## Development and releases
 
 ```powershell
 dotnet build .\src\AIUsageMonitor\AIUsageMonitor.csproj -c Release
-.\tools\release.ps1 -Version '2.15'
+.\tools\release.ps1 -Version '2.19'
 ```
 
-Skript publikuje EXE do `publish\\win-x64`, ukončí pouze dříve spuštěnou kopii z této složky, aplikaci po sestavení spustí a vytvoří commit i tag. GitHub Actions připojí EXE k release.
+The release script publishes the EXE to `publish\\win-x64`, stops only the previously running copy from that folder, starts the app after building, and creates a commit and tag. GitHub Actions attaches the EXE to the release.
 
-Tento README je součástí vydání: při každé změně funkcí, zdrojů dat, oprávnění nebo instalace se aktualizuje spolu s kódem.
+This README is part of every release: it must be updated whenever functionality, data sources, permissions, or installation change.
