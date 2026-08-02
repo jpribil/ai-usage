@@ -22,7 +22,7 @@ internal static class Localizer
         ["autostart"] = "Start with Windows", ["channel"] = "Notification channel…", ["routerKeys"] = "Router API keys…",
         ["updates"] = "Check for Updates", ["updateToken"] = "GitHub update token…", ["exit"] = "Exit", ["minute1"] = "1 Minute", ["minute5"] = "5 Minutes",
         ["minute15"] = "15 Minutes", ["hour1"] = "1 Hour", ["now"] = "now", ["resets"] = "Resets",
-        ["routers"] = "Routers", ["topicPrompt"] = "Enter your ntfy.sh channel (topic) name:", ["openRouterPrompt"] = "Enter OpenRouter management API key:",
+        ["routers"] = "Routers", ["topicPrompt"] = "Enter your ntfy.sh channel (topic) name:", ["sendTest"] = "Send test", ["testSent"] = "Test sent.", ["testFailed"] = "Test failed:", ["openRouterPrompt"] = "Enter OpenRouter management API key:",
         ["nanoPrompt"] = "Enter nano-gpt.com API key:", ["githubPrompt"] = "Enter read-only GitHub token for update checks:"
     };
 
@@ -34,7 +34,7 @@ internal static class Localizer
         ["autostart"] = "Spustit s Windows", ["channel"] = "Notifikační kanál…", ["routerKeys"] = "API klíče routerů…",
         ["updates"] = "Zkontrolovat aktualizace", ["updateToken"] = "GitHub token pro aktualizace…", ["exit"] = "Ukončit", ["minute1"] = "1 minuta", ["minute5"] = "5 minut",
         ["minute15"] = "15 minut", ["hour1"] = "1 hodina", ["now"] = "teď", ["resets"] = "Resety",
-        ["routers"] = "Routery", ["topicPrompt"] = "Zadejte název kanálu (topic) pro ntfy.sh:", ["openRouterPrompt"] = "Zadejte management API klíč OpenRouteru:",
+        ["routers"] = "Routery", ["topicPrompt"] = "Zadejte název kanálu (topic) pro ntfy.sh:", ["sendTest"] = "Odeslat test", ["testSent"] = "Testovací zpráva odeslána.", ["testFailed"] = "Test se nepodařilo odeslat:", ["openRouterPrompt"] = "Zadejte management API klíč OpenRouteru:",
         ["nanoPrompt"] = "Zadejte API klíč nano-gpt.com:", ["githubPrompt"] = "Zadejte GitHub token pouze pro čtení releasů:"
     };
 }

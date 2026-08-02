@@ -20,7 +20,7 @@ Aktuální instalační soubor je vždy v [GitHub Releases](https://github.com/j
 - Ukazuje dolarový zůstatek OpenRouteru a nano-gpt.com.
 - Kliknutí na zůstatek routeru otevře přímo jeho stránku s kredity; kurzor nad odkazem je ručička.
 - Obnovuje údaje po 1, 5, 15 nebo 60 minutách, případně ručně z menu.
-- Umí upozornit přes [ntfy.sh](https://ntfy.sh), když vybraný limit dosáhne 100 %.
+- Umí upozornit přes [ntfy.sh](https://ntfy.sh), když se vybraný limit resetuje. Zaškrtnutí u řádku limit jednorázově aktivuje; po úspěšném odeslání se automaticky zruší. V nastavení kanálu je tlačítko pro odeslání testovací zprávy.
 - Podporuje češtinu, angličtinu, světlý/tmavý motiv, automatické spuštění s Windows a režim vždy nahoře.
 - Kontroluje nové vydání v tomto soukromém GitHub repozitáři.
 

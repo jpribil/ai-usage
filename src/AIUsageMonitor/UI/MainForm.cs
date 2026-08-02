@@ -344,12 +344,17 @@ internal sealed class MainForm : Form
 
     private void ConfigureNotificationChannel()
     {
-        var result = TopicDialog.Prompt(this, _settings.NtfyTopic, T("topicPrompt"));
+        var result = PromptForNotificationChannel(_settings.NtfyTopic);
         if (result is not null)
         {
             SaveSettings(_settings with { NtfyTopic = string.IsNullOrEmpty(result) ? null : result });
         }
     }
+
+    private string? PromptForNotificationChannel(string? currentTopic) =>
+        TopicDialog.Prompt(this, currentTopic, T("topicPrompt"),
+            topic => _notifier.SendTestNotificationAsync(topic, _pollCancellation.Token),
+            T("sendTest"), T("testSent"), T("testFailed"));
 
     private void ConfigureRouterKeys()
     {
@@ -385,7 +390,7 @@ internal sealed class MainForm : Form
     {
         if (string.IsNullOrWhiteSpace(_settings.NtfyTopic))
         {
-            var topic = TopicDialog.Prompt(this, null);
+            var topic = PromptForNotificationChannel(null);
             if (string.IsNullOrWhiteSpace(topic))
             {
                 return;
@@ -427,7 +432,7 @@ internal sealed class MainForm : Form
             _routerUsage = await _routerBalances.GetAsync(_settings.OpenRouterApiKey, _settings.NanoGptApiKey, _pollCancellation.Token);
             if (result.Data.ClaudeCode is not null)
             {
-                DetectResets(_claudeUsage, result.Data.ClaudeCode, UsageLimit.ClaudeSession);
+                await DetectResetsAsync(_claudeUsage, result.Data.ClaudeCode, UsageLimit.ClaudeSession);
                 _claudeUsage = result.Data.ClaudeCode;
                 _claudeError = null;
             }
@@ -437,7 +442,7 @@ internal sealed class MainForm : Form
             }
             if (result.Data.Codex is not null)
             {
-                DetectResets(_codexUsage, result.Data.Codex, UsageLimit.CodexWeekly);
+                await DetectResetsAsync(_codexUsage, result.Data.Codex, UsageLimit.CodexWeekly);
                 _codexUsage = result.Data.Codex;
                 _codexError = null;
             }
@@ -509,7 +514,7 @@ internal sealed class MainForm : Form
         _codexUsage?.Session.ResetsAt, _codexUsage?.Weekly.ResetsAt
     }.Any(time => time is not null && time <= DateTimeOffset.UtcNow);
 
-    private void DetectResets(UsageData? previous, UsageData current, UsageLimit sessionLimit)
+    private async Task DetectResetsAsync(UsageData? previous, UsageData current, UsageLimit sessionLimit)
     {
         if (previous is null || string.IsNullOrWhiteSpace(_settings.NtfyTopic))
         {
@@ -518,16 +523,16 @@ internal sealed class MainForm : Form
 
         if (sessionLimit == UsageLimit.ClaudeSession)
         {
-            DetectReset(previous.Session, current.Session, UsageLimit.ClaudeSession);
-            DetectReset(previous.Weekly, current.Weekly, UsageLimit.ClaudeWeekly);
+            await DetectResetAsync(previous.Session, current.Session, UsageLimit.ClaudeSession);
+            await DetectResetAsync(previous.Weekly, current.Weekly, UsageLimit.ClaudeWeekly);
         }
         else
         {
-            DetectReset(previous.Weekly, current.Weekly, UsageLimit.CodexWeekly);
+            await DetectResetAsync(previous.Weekly, current.Weekly, UsageLimit.CodexWeekly);
         }
     }
 
-    private void DetectReset(UsageSection previous, UsageSection current, UsageLimit limit)
+    private async Task DetectResetAsync(UsageSection previous, UsageSection current, UsageLimit limit)
     {
         if (!_settings.ArmedLimits[(int)limit] || previous.ResetsAt is not { } oldReset || current.ResetsAt is not { } newReset ||
             newReset < oldReset.AddSeconds(60))
@@ -535,10 +540,12 @@ internal sealed class MainForm : Form
             return;
         }
 
-        // Disarm before sending: delivery is explicitly best-effort and may never block repeat detection.
         var topic = _settings.NtfyTopic;
-        SaveSettings(_settings.WithArmedLimit(limit, false));
-        _ = _notifier.SendResetNotificationAsync(topic, limit, _pollCancellation.Token);
+        var result = await _notifier.SendResetNotificationAsync(topic, limit, _pollCancellation.Token);
+        if (result.Succeeded)
+        {
+            SaveSettings(_settings.WithArmedLimit(limit, false));
+        }
     }
 
     private void ResizeToContent()
